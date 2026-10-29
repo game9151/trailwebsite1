@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Business config loaded first; it drives everything below. -->
+  <script src="site.config.js"></script>
+
+  <!-- Head bootstrap: set title, meta, OG, theme + JSON-LD from config,
+       synchronously, before first paint so crawlers and the tab get it. -->
+  <script>
+    (function () {
+      // Mark that JS is active, so CSS only hides content for scroll-reveal
+      // when JS can reveal it again. No JS → content stays visible.
+      document.documentElement.classList.add("js");
+      var S = window.SITE || {};
+      var seo = S.seo || {};
+      var a = S.address || {};
+      function meta(attr, key, val) {
+        if (!val) return;
+        var el = document.createElement("meta");
+        el.setAttribute(attr, key);
+        el.setAttribute("content", val);
+        document.head.appendChild(el);
+      }
+      document.title = seo.title || S.name || "Auto Repair";
+      meta("name", "description", seo.description);
+      meta("name", "theme-color", (S.theme && S.theme.colors && S.theme.colors.ink) || seo.themeColor);
+      // Open Graph
+      meta("property", "og:type", "website");
+      meta("property", "og:site_name", S.name);
+      meta("property", "og:title", seo.title);
+      meta("property", "og:description", seo.description);
+      meta("property", "og:url", seo.url);
+      if (seo.ogImage) meta("property", "og:image", (seo.url ? seo.url.replace(/\/$/, "") + "/" : "") + seo.ogImage);
+      // Twitter
+      meta("name", "twitter:card", "summary_large_image");
+      meta("name", "twitter:title", seo.title);
+      meta("name", "twitter:description", seo.description);
+      // Canonical
+      if (seo.url) {
+        var link = document.createElement("link");
+        link.rel = "canonical";
+        link.href = seo.url;
+        document.head.appendChild(link);
+      }
+      // Apply brand palette + fonts to CSS custom properties.
+      if (S.theme) {
+        var root = document.documentElement.style;
+        var c = S.theme.colors || {};
+        var map = {
+          ink: "--ink", steel: "--steel", steel2: "--steel-2", paper: "--paper",
+          panel: "--panel", accent: "--accent", accentText: "--accent-text",
+          line: "--line", lineOnDark: "--line-on-dark",
+        };
+        Object.keys(map).forEach(function (k) { if (c[k]) root.setProperty(map[k], c[k]); });
+        if (S.theme.fonts) {
+          if (S.theme.fonts.display) root.setProperty("--font-display", S.theme.fonts.display);
+          if (S.theme.fonts.body) root.setProperty("--font-body", S.theme.fonts.body);
+        }
+      }
+      // LocalBusiness / AutoRepair structured data.
+      var days = { Monday: "Mo", Tuesday: "Tu", Wednesday: "We", Thursday: "Th", Friday: "Fr", Saturday: "Sa", Sunday: "Su" };
+      var opening = (S.hours || [])
+        .filter(function (h) { return h.open && h.close; })
+        .map(function (h) { return days[h.day] + " " + h.open + "-" + h.close; });
+      var ratings = (S.reviews || []).map(function (r) { return r.rating || 5; });
+      var ld = {
+        "@context": "https://schema.org",
+        "@type": "AutoRepair",
+        name: S.name,
+        legalName: S.legalName,
+        description: seo.description,
+        url: seo.url,
+        telephone: S.phoneDial,
+        email: S.email,
+        priceRange: "££",
+        image: seo.url && seo.ogImage ? seo.url.replace(/\/$/, "") + "/" + seo.ogImage : undefined,
+        address: {
+          "@type": "PostalAddress",
+          streetAddress: a.street,
+          addressLocality: a.locality,
+          addressRegion: a.region,
+          postalCode: a.postalCode,
+          addressCountry: a.country,
+        },
+        openingHours: opening,
+      };
+      if (S.geo && S.geo.lat) ld.geo = { "@type": "GeoCoordinates", latitude: S.geo.lat, longitude: S.geo.lng };
+      if (ratings.length) {
+        var avg = (ratings.reduce(function (s, n) { return s + n; }, 0) / ratings.length).toFixed(1);
+        ld.aggregateRating = { "@type": "AggregateRating", ratingValue: avg, reviewCount: ratings.length };
+      }
+      if (S.socials) ld.sameAs = Object.keys(S.socials).map(function (k) { return S.socials[k]; }).filter(Boolean);
+      var s = document.createElement("script");
+      s.type = "application/ld+json";
+      s.textContent = JSON.stringify(ld, function (k, v) { return v === undefined ? undefined : v; });
+      document.head.appendChild(s);
+    })();
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%2315191E'/%3E%3Ctext x='50' y='70' font-family='Arial Narrow,sans-serif' font-size='62' font-weight='700' text-anchor='middle' fill='%23F5A524'%3EA%3C/text%3E%3C/svg%3E" />
+</head>
+
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header" id="site-header" data-header></header>
+
+  <main id="main">
+    <section class="hero" id="hero" data-hero aria-label="Introduction"></section>
+    <section class="trust" id="trust" data-trust aria-label="At a glance"></section>
+    <section class="services section" id="services" data-services aria-labelledby="services-title"></section>
+    <section class="why section" id="why" data-why aria-labelledby="why-title"></section>
+    <section class="process section" id="process" data-process aria-labelledby="process-title"></section>
+    <section class="reviews section" id="reviews" data-reviews aria-labelledby="reviews-title"></section>
+    <section class="pricing section" id="pricing" data-pricing aria-labelledby="pricing-title"></section>
+    <section class="area section" id="area" data-area aria-labelledby="area-title"></section>
+    <section class="contact section" id="contact" data-contact aria-labelledby="contact-title"></section>
+  </main>
+
+  <footer class="site-footer" id="site-footer" data-footer></footer>
+
+  <a class="call-fab" data-call-fab href="#" aria-label="Call us">
+    <svg viewBox="0 0 24 24" aria-hidden="true" width="22" height="22"><path fill="currentColor" d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.24 11.4 11.4 0 0 0 3.6.58 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.3a1 1 0 0 1 1 1 11.4 11.4 0 0 0 .58 3.6 1 1 0 0 1-.25 1z"/></svg>
+    <span data-call-fab-text>Call</span>
+  </a>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
